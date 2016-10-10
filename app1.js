@@ -13,6 +13,15 @@ app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// MIDDLEWARE
+//
+// app.use((req, res, next) => {
+//   console.log(req.url);
+//   console.log(req.method);
+//   console.log('req.query',req.query);
+//   next();
+// });
+
 // ROUTES
 // GET Intro
 app.get('/', (req, res) => {
@@ -24,9 +33,12 @@ app.get('/', (req, res) => {
 
 // GET all Todos or Todos by complete or not
 app.get('/todos', (req, res) => {
-  Todos.getAll(req.query.complete)
-    .then((todos) => res.send(todos))
-    .catch((err) => { res.status(400).send(err); })
+  Todos.getAll(req.query.complete, (err, todos) => {
+    if (err) {
+      return res.status(400).send(err);
+    }
+    res.send(todos);
+  });
 });
 
 // PUT Todos by ID
@@ -53,9 +65,10 @@ app.delete('/todos', (req, res) => {
 
 // POST new Todos
 app.post('/todos', (req, res) => {
-  Todos.create(req.body)
-    .then(() => res.send('New todo successfully created'))
-    .catch((err) => { res.status(400).send(err); })
+  Todos.create(req.body, err => {
+    if (err) return res.status(400).send(err);
+    res.send('New todo successfully created');
+  });
 });
 
 app.listen(PORT, err => {

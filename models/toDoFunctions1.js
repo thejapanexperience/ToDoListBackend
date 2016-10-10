@@ -4,16 +4,16 @@ const uuid = require('uuid');
 
 const filename = path.join(__dirname, '../data/todos.json');
 
-exports.getAll = (complete) => new Promise ((res, rej) => {
-  console.log('complete: ', complete)
+exports.getAll = function (complete, cb) {
   if (complete === 'true' || complete === 'false'){
     console.log('complete is either true or false: ', complete)
   } else {
     console.log('no query for complete or incomplete');
   }
-
+  // read from filenamejson parse on buffer
+  // json parse on buffer
   fs.readFile(filename, (err, buffer) => {
-    if (err) return rej(err);
+    if (err) return cb(err);
     try {
       var data = JSON.parse(buffer);
     } catch (e) {
@@ -25,20 +25,18 @@ exports.getAll = (complete) => new Promise ((res, rej) => {
         let completed = data.filter((todo) => {
           return todo.complete === true;
         })
-        res(completed);
+        cb(null, completed);
       } else if (complete === 'false') {
         let completed = data.filter((todo) => {
           return todo.complete === false;
         })
-        res(completed);
+        cb(null, completed);
       }
     } else {
-      console.log('data: ', data)
-      res(data);
+      cb(null, data);
     }
-  })
-});
-
+  });
+};
 
 exports.editOne = (id) => new Promise((res, rej) => {
   fs.readFile(filename, (err, buffer) => {
@@ -106,31 +104,17 @@ exports.deleteAll = () => new Promise((res, rej) => {
   });
 });
 
-exports.write = (newData) => new Promise ((res, rej) => {
-  if (err) return rej(err);
+exports.write = function (newData, cb) {
   const json = JSON.stringify(newData);
-  s.writeFile(filename, json, (err) => {
-    if (err) throw err;
-  });
-  res();
-})
+  fs.writeFile(filename, json, cb);
+};
 
-exports.create = (newItem) => new Promise ((res, rej) => {
-  fs.readFile(filename, (err, buffer) => {
-    if (err) return rej(err);
-    try {
-      var data = JSON.parse(buffer);
-    } catch(e) {
-      var data = [];
-      return rej('failed');
-    }
+exports.create = function (newItem, cb) {
+  exports.getAll((err, items) => {
+    if (err) return cb(err);
     newItem.id = uuid();
     newItem.complete = false
-    data.push(newItem);
-    const json = JSON.stringify(data);
-    fs.writeFile(filename, json, (err) => {
-      if (err) throw err;
-    });
-    res();
+    items.push(newItem);
+    exports.write(items, cb);
   });
-});
+};
